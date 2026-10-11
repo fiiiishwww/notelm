@@ -1,0 +1,40 @@
+# ── 依赖与构建产物 ──
+node_modules/
+dist/
+
+# ── 本地数据：绝不进仓库 ──
+# 笔记库（Markdown 原文 + .notebook 伴生数据）
+notes/
+# 本地配置、临时产物、调试输出
+.local/
+# 备份
+.backups/
+# 项目协作记忆
+.workbuddy/
+.notebook/
+
+# ── 密钥 ──
+.env
+.env.local
+.env.*.local
+*.log
+
+# ── 第三方版权材料：不上传 ──
+# 考研 / 教材原始 PDF
+eval/math/raw/
+# 知识图谱导出产物（派生自书稿内容）
+learn/
+
+# ── 含个人信息的文档 ──
+# 求职投递材料与选型调研（含简历策略、云服务器地址）
+docs/求职-*.md
+docs/调研-*.md
+
+# ── 顶层调试散件（调端口、抓日志留下的临时输出）──
+/*.txt
+/dbg-walk.mts
+/ts-rel.json
+
+# ── 渲染中间产物 ──
+docs/arch/*.txt
+tmp_resume_render/

@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "小抄生成管道 V3（唯一花钱的路径）",
+    "output": "docs/arch/notelm-cheatsheet-pipeline.html",
+    "animation": "trace",
+    "visual_preset": "signal-flow",
+    "quality_profile": "standard",
+    "views": [
+      { "id": "spend", "label": "钱花在哪", "focus": ["analyze", "split", "collect", "merge"], "note": "只有采集和归并调模型；切窗、判据、覆盖率、渲染全是纯函数，0 次调用。" },
+      { "id": "guards", "label": "护栏（不花钱但决定质量）", "focus": ["collect", "merge", "vet", "persist"], "note": "判据复核与覆盖率门槛都是确定性代码，决定产物能不能用。" }
+    ]
+  },
+  "lanes": [
+    { "id": "src", "label": "原文" },
+    { "id": "win", "label": "切窗" },
+    { "id": "collect", "label": "采集" },
+    { "id": "merge", "label": "归并" },
+    { "id": "vet", "label": "判据" },
+    { "id": "persist", "label": "落盘" }
+  ],
+  "phases": [
+    { "id": "prep", "label": "准备（0 调用）", "fromCol": 0, "toCol": 1 },
+    { "id": "spend-phase", "label": "花钱的两步", "fromCol": 2, "toCol": 3, "variant": "emphasis" },
+    { "id": "guard-phase", "label": "护栏 + 落盘", "fromCol": 4, "toCol": 5, "variant": "dashed" }
+  ],
+  "mainPath": ["analyze", "split", "collect", "merge", "vet", "persist"],
+  "nodes": [
+    { "id": "analyze", "lane": "src", "col": 0, "width": 76, "type": "database", "label": "读文档分块", "sublabel": "blockIndex" },
+    { "id": "split", "lane": "win", "col": 1, "width": 76, "type": "database", "label": "按块切窗", "sublabel": "1800 字/窗" },
+    { "id": "collect", "lane": "collect", "col": 2, "width": 76, "type": "cloud", "label": "并发采集", "sublabel": "并发 3", "tag": "花钱" },
+    { "id": "merge", "lane": "merge", "col": 3, "width": 76, "type": "cloud", "label": "两级归并", "sublabel": "去重 → 收口", "tag": "花钱" },
+    { "id": "vet", "lane": "vet", "col": 4, "width": 76, "type": "security", "label": "判据复核", "sublabel": "纯函数 0 调用", "tag": "R1/R2/R4" },
+    { "id": "persist", "lane": "persist", "col": 5, "width": 76, "type": "database", "label": "覆盖率+落盘", "sublabel": "0.7 门槛" }
+  ],
+  "edges": [
+    { "from": "analyze", "to": "split", "variant": "emphasis" },
+    { "from": "split", "to": "collect", "label": "每窗一次", "variant": "emphasis" },
+    { "from": "collect", "to": "merge", "variant": "emphasis" },
+    { "from": "merge", "to": "vet", "variant": "emphasis", "route": "drop", "fromSide": "bottom", "toSide": "top" },
+    { "from": "vet", "to": "persist", "variant": "emphasis", "route": "drop", "fromSide": "bottom", "toSide": "top" }
+  ],
+  "cards": [
+    { "dot": "rose", "title": "钱只花在两个地方", "items": ["采集：每个窗口一次调用，并发 3，一节约 10 次", "归并：批内只去重不取舍，顶层才写 focus/gist", "整节约 15 次调用 / 3 分钟"] },
+    { "dot": "emerald", "title": "护栏都不花钱", "items": ["vetItems：引文定位不到只丢引文、不丢内容", "被裁的进回收站留全尸，可 ▲ 复活", "覆盖率 0.7 是量出来的门槛，只补孤立漏块"] },
+    { "dot": "cyan", "title": "判据的处置分三档", "items": ["拿得准 → 裁（进回收站，可捞回）", "拿不准 → 标记（R2 疑问句，多一个 ? 徽章）", "只是类型错 → 改判（R1 数值改成定义，不删）"] }
+  ]
+}

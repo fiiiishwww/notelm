@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "NoteLM 系统架构",
+    "output": "docs/arch/notelm-architecture.html",
+    "quality_profile": "standard",
+    "views": [
+      { "id": "read-path", "label": "读一篇文档", "focus": ["users", "spa", "api", "vault"], "note": "打开 md 到看到正文：渲染成块、给每块编号，顺带把标注重锚一次。" },
+      { "id": "cheatsheet-path", "label": "生成小抄（最重的一条）", "focus": ["api", "pipeline", "llm", "render", "notebook"], "note": "唯一会花钱和时间的路径：切窗并发采集、归并、判据复核、覆盖率补采。" },
+      { "id": "human-loop", "label": "人的判断怎么进系统", "focus": ["spa", "api", "services", "notebook"], "note": "标注、评测集、回收站、标注随行——系统里唯一的人的反馈回路。" },
+      { "id": "assistant-path", "label": "外部 AI 怎么读库", "focus": ["spa", "dsh", "mcp", "vault"], "note": "DSH 由 iframe 直连并遵守 AGENTS.md；MCP 是只读 stdio 通道，给别的 agent 用。" }
+    ]
+  },
+  "components": [
+    { "id": "users", "type": "external", "label": "多鱼", "sublabel": "浏览器 / 触屏", "pos": [30, 290], "size": [120, 60] },
+    { "id": "spa", "type": "frontend", "label": "React 前端", "sublabel": "三栏 · 860px 断点", "pos": [200, 270], "size": [160, 76] },
+    { "id": "mcp", "type": "backend", "label": "MCP server", "sublabel": "stdio · 只读", "pos": [200, 450], "size": [150, 58] },
+    { "id": "api", "type": "backend", "label": "Express 服务", "sublabel": "/api · :3000", "pos": [430, 290], "size": [150, 70], "tag": "X-Local-Token" },
+    { "id": "pipeline", "type": "backend", "label": "小抄管道 V3", "sublabel": "切窗 · 并发采集 · 归并", "pos": [660, 170], "size": [170, 70] },
+    { "id": "render", "type": "backend", "label": "呈现层", "sublabel": "纯函数 · 不落盘", "pos": [660, 290], "size": [170, 60] },
+    { "id": "services", "type": "backend", "label": "图谱 · 检索 · 反馈 · 复习", "sublabel": "graph / embed / feedback / sm2", "pos": [660, 400], "size": [170, 74] },
+    { "id": "llm", "type": "cloud", "label": "DeepSeek / 百炼", "sublabel": "chat + embeddings", "pos": [660, 40], "size": [170, 62] },
+    { "id": "vault", "type": "database", "label": "notes/", "sublabel": "md 原文 · 唯一的真", "pos": [920, 232], "size": [160, 66] },
+    { "id": "notebook", "type": "database", "label": "notes/.notebook/", "sublabel": "sidecar · 索引 · eval-set", "pos": [920, 380], "size": [160, 80], "tag": "全派生可重建" },
+    { "id": "dsh", "type": "external", "label": "DSH", "sublabel": "DeepSeek Harness · :3080", "pos": [880, 60], "size": [170, 62] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "本机 Node 进程", "wraps": ["api", "pipeline", "render", "services", "mcp"] },
+    { "kind": "region", "label": "笔记库（磁盘）", "wraps": ["vault", "notebook"] }
+  ],
+  "connections": [
+    { "id": "u-spa", "from": "users", "to": "spa", "variant": "emphasis" },
+    { "id": "spa-api", "from": "spa", "to": "api", "variant": "emphasis" },
+    { "id": "spa-dsh", "from": "spa", "to": "dsh", "variant": "dashed", "fromSide": "top", "toSide": "top", "via": [[280, 262], [280, 18], [965, 18], [965, 56]] },
+    { "id": "dsh-vault", "from": "dsh", "to": "vault", "variant": "dashed", "fromSide": "bottom", "toSide": "top", "via": [[965, 140], [1000, 140], [1000, 228]] },
+    { "id": "api-vault", "from": "api", "to": "vault", "fromSide": "top", "toSide": "left", "via": [[505, 282], [505, 265], [916, 265]] },
+    { "id": "vault-nb", "from": "vault", "to": "notebook", "variant": "dashed" },
+    { "id": "api-pipeline", "from": "api", "to": "pipeline" },
+    { "id": "api-svc", "from": "api", "to": "services" },
+    { "id": "pipeline-llm", "from": "pipeline", "to": "llm" },
+    { "id": "pipeline-render", "from": "pipeline", "to": "render" },
+    { "id": "render-nb", "from": "render", "to": "notebook" },
+    { "id": "svc-nb", "from": "services", "to": "notebook", "fromSide": "right", "toSide": "bottom", "via": [[880, 437], [880, 590], [1000, 590]] },
+    { "id": "mcp-nb", "from": "mcp", "to": "notebook", "variant": "dashed", "fromSide": "bottom", "toSide": "bottom", "via": [[275, 526], [275, 620], [1000, 620]] }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "数据分两层", "items": ["notes/ 里的 md 是唯一的真，别的全是派生物", ".notebook/ 删了能重建（sidecar、向量索引、图谱）", "sidecar 按 blockIndex 存，文档一改就 reanchor 自愈"] },
+    { "dot": "emerald", "title": "花销全在小抄管道", "items": ["按块切窗 → 并发 3 采集 → 分批归并 → 判据复核", "判据是纯函数、0 次调用；探针 import 服务端同一份", "覆盖率低于 0.7 才补采，且只补孤立漏块"] },
+    { "dot": "rose", "title": "人的判断只有一条路进来", "items": ["▲▽⧉ 标注 → eval-set.jsonl（只追加，重生成毁不掉）", "重生成时标注随行 carryFeedback，认不出的进孤儿档", "被裁条目进回收站可 ▲ 复活；判据拿不准时只打标记不删"] }
+  ]
+}

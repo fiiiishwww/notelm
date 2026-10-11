@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- viewport-fit=cover：配合 CSS 的 env(safe-area-inset-*)，内容才能铺到 iPhone 刘海两侧和底部横杠之下 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <!-- 手机浏览器的地址栏随主题变色，不写这两行会一直是个突兀的灰条 -->
+    <meta name="theme-color" content="#fdf8f2" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#221d19" media="(prefers-color-scheme: dark)" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="x-local-token" content="__LOCAL_TOKEN__" />
+    <title>NoteLM</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
